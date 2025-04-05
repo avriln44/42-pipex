@@ -3,21 +3,22 @@
 /*                                                        :::      ::::::::   */
 /*   pipex_exec.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: thi-mngu <thi-mngu@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: minhnhat <minhnhat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/16 12:49:49 by thi-mngu          #+#    #+#             */
-/*   Updated: 2025/03/31 16:02:33 by thi-mngu         ###   ########.fr       */
+/*   Updated: 2025/04/02 00:39:50 by minhnhat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-void	first_cmd(char **argv, char **envp, int *fd)
+void first_cmd(char **argv, char **envp, int *fd)
 {
-	int		fd_in;
+	int fd_in;
 
 	if (!open_file(argv[1], 1))
 	{
+
 		exit(1);
 	}
 	fd_in = open(argv[1], O_RDONLY);
@@ -35,9 +36,9 @@ void	first_cmd(char **argv, char **envp, int *fd)
 	exit(0);
 }
 
-void	second_cmd(char **argv, char **envp, int *fd)
+void second_cmd(char **argv, char **envp, int *fd)
 {
-	int	fd_out;
+	int fd_out;
 
 	fd_out = open(argv[4], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (fd_out == -1 || !open_file(argv[4], 0))
@@ -52,13 +53,15 @@ void	second_cmd(char **argv, char **envp, int *fd)
 	close(fd_out);
 	pipex_execute(envp, argv[3]);
 	perror("execve failed");
-	exit(0);
+	if (errno == EACCES)
+		exit(126);
+	exit(127);
 }
 
-static	int	wait_for_children(pid_t pid1, pid_t pid2)
+static int wait_for_children(pid_t pid1, pid_t pid2)
 {
-	int	status1;
-	int	status2;
+	int status1;
+	int status2;
 
 	if (waitpid(pid1, &status1, 0) == -1)
 	{
@@ -72,19 +75,21 @@ static	int	wait_for_children(pid_t pid1, pid_t pid2)
 	}
 	if (WIFEXITED(status2))
 		return (WEXITSTATUS(status2));
+	if (WIFEXITED(status1))
+		return (WEXITSTATUS(status1));
 	return (1);
 }
 
-static void	handle_fork_error(char *msg)
+static void handle_fork_error(char *msg)
 {
 	perror(msg);
 	exit(1);
 }
 
-void	execute(char **argv, char **envp, int *fd)
+void execute(char **argv, char **envp, int *fd)
 {
-	pid_t	pid1;
-	pid_t	pid2;
+	pid_t pid1;
+	pid_t pid2;
 
 	pipex_pipe(fd);
 	pid1 = fork();
@@ -99,7 +104,10 @@ void	execute(char **argv, char **envp, int *fd)
 	if (pid2 == -1)
 		handle_fork_error("error fork: first command\n");
 	if (pid2 == 0)
+	{
 		second_cmd(argv, envp, fd);
+		exit(0);
+	}
 	close(fd[0]);
 	close(fd[1]);
 	exit(wait_for_children(pid1, pid2));

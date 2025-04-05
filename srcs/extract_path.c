@@ -3,23 +3,23 @@
 /*                                                        :::      ::::::::   */
 /*   extract_path.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: thi-mngu <thi-mngu@student.hive.fi>        +#+  +:+       +#+        */
+/*   By: minhnhat <minhnhat@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/23 15:12:11 by thi-mngu          #+#    #+#             */
-/*   Updated: 2025/03/31 15:34:44 by thi-mngu         ###   ########.fr       */
+/*   Updated: 2025/04/01 22:43:14 by minhnhat         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "pipex.h"
 
-static char	*get_path(char **envp)
+static char *get_path(char **envp)
 {
-	int		i;
-	char	*default_path = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+	int i;
+	char *default_path = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
 
 	if (!envp || !*envp)
 	{
-		write(2, "Environment PATH missing!\n", 26);
+		write(2, "Error: Environment PATH missing!\n", 33);
 		exit(1);
 	}
 	i = 0;
@@ -32,24 +32,22 @@ static char	*get_path(char **envp)
 	return (default_path);
 }
 
-char	**get_cmd_arr(char **envp)
+char **get_cmd_arr(char **envp)
 {
-	char	**cmd_arr;
-	char	*path;
+	char **cmd_arr;
+	char *path;
 
-	if (!envp || !*envp)
-	{
-		write(2, "Environment PATH missing!\n", 26);
-		return (NULL);
-	}
 	path = get_path(envp);
 	if (!path)
 	{
-		write(2, "PATH not found\n", 16);
+		write(2, "Error: PATH not found\n", 22);
 		exit(127);
 	}
 	cmd_arr = ft_split(path, ':');
 	if (!cmd_arr)
-		return (NULL);
+	{
+		write(2, "Error: Memory allocation failed\n", 32);
+		exit(1);
+	}
 	return (cmd_arr);
 }
